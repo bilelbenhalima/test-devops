@@ -1,15 +1,17 @@
-FROM node:12-slim  as build
+# pull official base image
+FROM node:14.17-alpine3.10  as build
 
+# set working directory
 WORKDIR /app
-
-COPY ./package.json ./
-
-RUN npm install
-
-RUN npm audit fix
-
-COPY . .
-
+# add `/app/node_modules/.bin` to $PATH
+ENV PATH /app/node_modules/.bin:$PATH
+# install app dependencies
+COPY package.json ./
+COPY package-lock.json ./
+RUN npm install --silent
+RUN npm install react-scripts@3.4.1 -g --silent
+# add app
+COPY . ./
 RUN npm run build
 
 # production environment
