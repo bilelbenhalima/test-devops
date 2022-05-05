@@ -1,21 +1,30 @@
-# pull the base image
-FROM node:14.16.1-buster
+FROM node:12-slim  as build
 
-# set working directory
+ARG PORT
+ARG REACT_APP_API_URL
+ARG SKIP_PREFLIGHT_CHECK
+
+ENV PORT=$PORT
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
+ENV SKIP_PREFLIGHT_CHECK=true
+ENV NODE_OPTIONS=--max_old_space_size=4096
+
 WORKDIR /app
 
-# add `/app/node_modules/.bin` to $PATH
-ENV PATH /app/node_modules/.bin:$PATH
+COPY ./package.json ./
 
-# install app dependencies
-COPY package.json ./
-COPY package-lock.json ./
-RUN npm install --silent
-RUN npm install react-scripts@3.4.1 -g --silent
+RUN npm install
 
-# add app
-COPY . ./
-EXPOSE 3000
-# start app
-CMD ["npm", "start"]
+RUN npm audit fix
 
+COPY . .
+
+RUN npm run build
+
+# production environment
+FROM nginx:stable-alpine
+COPY --from=build /app/build /usr/share/nginx/html
+# new
+COPY nginx/nginx.conf /etc/nginx/conf.d/default.conf
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
