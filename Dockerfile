@@ -1,7 +1,5 @@
 FROM node:12-slim  as build
 
-ENV PORT=80
-
 WORKDIR /app
 
 COPY ./package.json ./
